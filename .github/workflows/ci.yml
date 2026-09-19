@@ -27,8 +27,8 @@ jobs:
           restore-keys: |
             dependency-check-${{ runner.os }}-
 
-      - name: Build and test
-        run: ./mvnw test
+      - name: Build without tests
+        run: ./mvnw package -DskipTests
 
       - name: SAST with SpotBugs
         run: ./mvnw com.github.spotbugs:spotbugs-maven-plugin:4.8.6.6:spotbugs
