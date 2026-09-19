@@ -13,6 +13,7 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.web.util.HtmlUtils;
 
 @Entity
 @Table(name = "notes")
@@ -38,8 +39,8 @@ public class Note {
 
     public Note(AppUser owner, String title, String text) {
         this.owner = owner;
-        this.title = title;
-        this.text = text;
+        this.title = HtmlUtils.htmlEscape(title);
+        this.text = HtmlUtils.htmlEscape(text);
         this.createdAt = Instant.now();
     }
 }
