@@ -1,0 +1,65 @@
+name: CI Security Checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: lab1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Cache Dependency-Check data
+        uses: actions/cache@v4
+        with:
+          path: lab1/dependency-check-data
+          key: dependency-check-${{ runner.os }}-${{ hashFiles('lab1/pom.xml') }}
+          restore-keys: |
+            dependency-check-${{ runner.os }}-
+
+      - name: Build and test
+        run: ./mvnw test
+
+      - name: SAST with SpotBugs
+        run: ./mvnw com.github.spotbugs:spotbugs-maven-plugin:4.8.6.6:spotbugs
+
+      - name: SCA with OWASP Dependency-Check
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+          OSS_INDEX_USERNAME: ${{ secrets.OSS_INDEX_USERNAME }}
+          OSS_INDEX_TOKEN: ${{ secrets.OSS_INDEX_TOKEN }}
+        run: |
+          mkdir -p ./dependency-check-data
+          ./mvnw -B org.owasp:dependency-check-maven:12.1.3:check \
+            -Dnvd.apiKey=$NVD_API_KEY \
+            -DdataDirectory=./dependency-check-data \
+            -Dformat=HTML \
+            -DfailBuildOnCVSS=11 \
+            -DossIndexAnalyzerEnabled=true \
+            -DossIndexAnalyzerUrl=https://api.guide.sonatype.com \
+            -DossIndexUsername=$OSS_INDEX_USERNAME \
+            -DossIndexPassword=$OSS_INDEX_TOKEN
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            lab1/target/spotbugsXml.xml
+            lab1/target/dependency-check-report.html
+          if-no-files-found: ignore
