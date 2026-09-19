@@ -8,10 +8,6 @@ jobs:
   security:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: lab1
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -60,6 +56,6 @@ jobs:
         with:
           name: security-reports
           path: |
-            lab1/target/spotbugsXml.xml
-            lab1/target/dependency-check-report.html
+            target/spotbugsXml.xml
+            target/dependency-check-report.html
           if-no-files-found: ignore
